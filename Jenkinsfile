@@ -3,55 +3,42 @@
 pipeline {
     agent any
 
+    environment {
+        VENV = 'venv'
+    }
+
     stages {
-        stage('Checkout') {
+        stage ("Install") {
             steps {
-                checkout scm
+                sh '''
+                    python3 -m venv $VENV
+                    . $VENV/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
             }
         }
-
-        stage('Setup') {
+        stage ("Linting") {
             steps {
-                sh 'python -m pip install --upgrade pip'
-                sh 'pip install -r requirements.txt'
+                script {
+                    echo "This is my Linting Step"
+                }
             }
         }
-
-        stage('Lint') {
+        stage ("Install Packages") {
             steps {
-                sh 'flake8 app/ tests/'
+                script {
+                    echo "This is Install PAkcges Step"
+                }
             }
         }
-
-        stage('Test') {
+        stage ("Run Application") {
             steps {
-                sh 'python -m pytest --cov=app tests/'
-            }
-            post {
-                always {
-                    sh 'python -m pytest --cov=app --cov-report=xml tests/'
-                    junit 'pytest-results.xml'// Requires pytest-junit plugin
+                script {
+                    echo "This is my Run applcaition Step"
                 }
             }
         }
 
-        stage('Build') {
-            steps {
-                sh 'pip install wheel'
-                sh 'python setup.py bdist_wheel'
-            }
-            post {
-                success {
-                    archiveArtifacts artifacts: 'dist/*.whl', fingerprint: true
-                }
-            }
-        }
-
-        stage('Deploy to Staging') {
-            steps {
-                echo 'Deploying to staging environment...'
-                sh 'mkdir -p staging && cp dist/*.whl staging/'
-            }
-        }
     }
 }
